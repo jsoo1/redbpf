@@ -18,7 +18,6 @@ syntax. So macro constants can not be generated from vmlinux image. But
 system.
 */
 
-use super::libbpf_bindings;
 use libbpf_sys::{
     btf, btf__free, btf__get_nr_types, btf__name_by_offset, btf__parse_elf, btf__parse_raw,
     btf__type_by_id, btf_dump, btf_dump__dump_type, btf_dump__free, libbpf_find_kernel_btf,
@@ -194,7 +193,7 @@ impl VmlinuxBtfDump {
             None
         };
         unsafe {
-            let dumpptr = libbpf_bindings::btf_dump__new(
+            let dumpptr = libbpf_sys::btf_dump__new(
                 self.btfptr as _,
                 Some(vdprintf_wrapper),
                 &mut rawfd as *mut _ as *mut _,
@@ -240,22 +239,21 @@ impl Drop for VmlinuxBtfDump {
     }
 }
 
-// FIXME: remove libbpf_bindings in favor of libbpf-sys
 // wrapping vdprintf to get rid of return type
 unsafe extern "C" fn vdprintf_wrapper(
     ctx: *mut c_void,
     format: *const c_char,
     #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
     #[cfg(target_env = "musl")]
-    va_list: libbpf_bindings::__isoc_va_list,
+    va_list: libbpf_sys::__isoc_va_list,
     #[cfg(any(target_arch = "arm", target_arch = "aarch64"))]
     #[cfg(not(target_env = "musl"))]
-    va_list: libbpf_bindings::__gnuc_va_list,
+    va_list: libbpf_sys::__gnuc_va_list,
     #[cfg(not(any(target_arch = "arm", target_arch = "aarch64")))]
-    va_list: *mut libbpf_bindings::__va_list_tag,
+    va_list: *mut libbpf_sys::__va_list_tag,
 ) {
     let rawfd_wrapper = &*(ctx as *mut RawFdWrapper);
-    libbpf_bindings::vdprintf(rawfd_wrapper.0, format, va_list);
+    libbpf_sys::vdprintf(rawfd_wrapper.0, format, va_list);
 }
 
 pub fn get_custom_vmlinux_path() -> Option<PathBuf> {
